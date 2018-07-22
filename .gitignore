@@ -1,0 +1,8 @@
+node_modules
+build
+.idea
+.vscode/
+dist/
+yarn.lock
+/tmp.js
+**/.DS_Store

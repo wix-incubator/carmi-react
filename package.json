@@ -1,0 +1,23 @@
+{
+  "name": "carmi-react",
+  "version": "0.0.1",
+  "description": "Integration between Carmi and React",
+  "main": "index.js",
+  "author": "Avi Marcus",
+  "license": "MIT",
+  "scripts": {
+    "test": "node node_modules/jest/bin/jest.js"
+  },
+  "private": false,
+  "devDependencies": {
+    "babel-jest": "^23.4.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "carmi": "^0.1.30",
+    "jest": "^23.4.1",
+    "react-test-renderer": "^16.4.1"
+  },
+  "dependencies": {
+    "react": "^16.4.1"
+  }
+}

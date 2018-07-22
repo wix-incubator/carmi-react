@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`rendering basic 1`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    second
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering basic 2`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering basic 3`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+  <span>
+    Added a fourth item
+  </span>
+</div>
+`;
