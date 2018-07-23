@@ -30,7 +30,7 @@ class CarmiObserver extends React.Component {
           return React.createElement(type, props);
         } else {
           const cls = context.componentFromName[type];
-          if (cls.prototype.render) {
+          if (cls.prototype && cls.prototype.render) {
             return React.createElement(cls, props);
           } else {
             return cls(props, context.instance);
@@ -78,6 +78,7 @@ function init(componentFromName) {
         context.root.forceUpdate(() => {});
       }
     });
+    pendingFlush.clear();
     return val;
   }
 
