@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('rendering', () => {
   it('basic rendering using DOM types directly', async () => {
-    const { provider, flush, funcLib } = carmiReact();
+    const { Provider, funcLib } = carmiReact();
     const todos = root.map((item, idx) => createElement({ children: item, key: idx }, 'span'));
     const todosList = createElement({ children: todos }, 'div');
     const model = {
@@ -31,8 +31,7 @@ describe('rendering', () => {
     const optCode = eval(await compile(model, { compiler: 'optimizing' }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
-    inst.$addListener(flush);
-    const mounted = renderer.create(provider({ children: inst.todosList, instance: inst }));
+    const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
     inst.setItem(1, 'changed the second item');
     expect(mounted.toJSON()).toMatchSnapshot();
@@ -40,7 +39,7 @@ describe('rendering', () => {
     expect(mounted.toJSON()).toMatchSnapshot();
   });
   it('basic rendering using functions in compNames map', async () => {
-    const { provider, flush, funcLib } = carmiReact({
+    const { Provider, funcLib } = carmiReact({
       span: renderEcho.bind(null, 'span'),
       div: renderEcho.bind(null, 'div')
     });
@@ -53,8 +52,7 @@ describe('rendering', () => {
     const optCode = eval(await compile(model, { compiler: 'optimizing' }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
-    inst.$addListener(flush);
-    const mounted = renderer.create(provider({ children: inst.todosList, instance: inst }));
+    const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expectRenders(4);
     expect(mounted.toJSON()).toMatchSnapshot();
     inst.setItem(1, 'changed the second item');
@@ -65,7 +63,7 @@ describe('rendering', () => {
     expect(mounted.toJSON()).toMatchSnapshot();
   });
   it('basic rendering using functions in compNames map wire events to instance', async () => {
-    const { provider, flush, funcLib } = carmiReact({
+    const { Provider, funcLib } = carmiReact({
       Todo: ({ children, idx }, instance) =>
         renderEcho('span', {
           children,
@@ -84,11 +82,12 @@ describe('rendering', () => {
     const optCode = eval(await compile(model, { compiler: 'optimizing' }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
-    inst.$addListener(flush);
-    const mounted = renderer.create(provider({ children: inst.todosList, instance: inst }));
+    const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
-    const item = mounted.root.findAllByType('span');
-    console.log(item);
     expectRenders(4);
+    const items = mounted.root.findAllByType('span');
+    items[0].props.onClick();
+    expectRenders(1);
+    expect(mounted.toJSON()).toMatchSnapshot();
   });
 });

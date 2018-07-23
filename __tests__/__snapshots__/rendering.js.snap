@@ -109,3 +109,23 @@ exports[`rendering basic rendering using functions in compNames map wire events 
   </span>
 </div>
 `;
+
+exports[`rendering basic rendering using functions in compNames map wire events to instance 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    first!
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    third
+  </span>
+</div>
+`;

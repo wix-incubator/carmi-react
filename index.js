@@ -1,19 +1,23 @@
 const React = require('react');
 
-const { Provider, Consumer } = React.createContext(null);
+const CarmiContext = React.createContext(null);
 
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
   }
   render() {
-    return React.createElement(Provider, {
+    return React.createElement(CarmiContext.Provider, {
       value: this.props.value,
-      children: this.props.children
+      children: this.props.children()
     });
   }
   componentDidMount() {
     this.props.value.root = this;
+    this.props.value.instance.$addListener(this.props.value.flush);
+  }
+  componentWillUnmount() {
+    this.props.value.instance.$removeListener(this.props.value.flush);
   }
 }
 
@@ -22,7 +26,7 @@ class CarmiObserver extends React.Component {
     super(props);
   }
   render() {
-    return React.createElement(Consumer, {
+    return React.createElement(CarmiContext.Consumer, {
       children: context => {
         context.descriptorToCompsMap.set(this.props.descriptor, this);
         const { type, props } = this.props.descriptor;
@@ -86,15 +90,15 @@ function init(componentFromName) {
     createElement
   };
 
-  function provider({ children, instance }) {
+  function Provider({ children, instance }) {
     context.instance = instance;
+    context.flush = flush;
     return React.createElement(CarmiRoot, { children, value: context });
   }
 
   return {
     funcLib,
-    flush,
-    provider
+    Provider
   };
 }
 
