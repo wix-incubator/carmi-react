@@ -6,7 +6,11 @@
   "author": "Avi Marcus",
   "license": "MIT",
   "scripts": {
-    "test": "node node_modules/jest/bin/jest.js"
+    "test": "node node_modules/jest/bin/jest.js",
+    "release": "wnpm-release --no-shrinkwrap"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "private": false,
   "devDependencies": {
@@ -15,9 +19,11 @@
     "babel-preset-react": "^6.24.1",
     "carmi": "^0.1.30",
     "jest": "^23.4.1",
-    "react-test-renderer": "^16.4.1"
+    "react": "^16.4.1",
+    "react-test-renderer": "^16.4.1",
+    "wnpm-ci": "latest"
   },
-  "dependencies": {
-    "react": "^16.4.1"
+  "peerDependencies": {
+    "react": "^16.4.0"
   }
 }
