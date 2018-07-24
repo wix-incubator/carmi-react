@@ -129,3 +129,51 @@ exports[`rendering basic rendering using functions in compNames map wire events 
   </span>
 </div>
 `;
+
+exports[`rendering multiple children support 1`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    - first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    items not clicked:
+    3
+  </span>
+</div>
+`;
+
+exports[`rendering multiple children support 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    + first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    items not clicked:
+    2
+  </span>
+</div>
+`;

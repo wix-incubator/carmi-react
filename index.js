@@ -29,15 +29,15 @@ class CarmiObserver extends React.Component {
     return React.createElement(CarmiContext.Consumer, {
       children: context => {
         context.descriptorToCompsMap.set(this.props.descriptor, this);
-        const { type, props } = this.props.descriptor;
+        const { type, props, children } = this.props.descriptor;
         if (!context.componentFromName.hasOwnProperty(type)) {
-          return React.createElement(type, props);
+          return React.createElement.apply(React, [type, props].concat(children || []));
         } else {
           const cls = context.componentFromName[type];
           if (cls.prototype && cls.prototype.render) {
-            return React.createElement(cls, props);
+            return React.createElement.apply(React, [cls, props].concat(children || []));
           } else {
-            return cls(props, context.instance);
+            return cls.apply(context.instance, [props].concat(children || []));
           }
         }
       }
@@ -61,7 +61,7 @@ function init(componentFromName) {
 
   function createElement(descriptor) {
     const { props } = descriptor;
-    const key = props.key;
+    const key = props && props.key;
     if (context.root && context.descriptorToCompsMap.has(descriptor)) {
       pendingFlush.add(descriptor);
     }
