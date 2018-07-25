@@ -130,6 +130,52 @@ exports[`rendering basic rendering using functions in compNames map wire events 
 </div>
 `;
 
+exports[`rendering higher order components 1`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    - first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    3
+  </span>
+</div>
+`;
+
+exports[`rendering higher order components 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    + first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    2
+  </span>
+</div>
+`;
+
 exports[`rendering multiple children support 1`] = `
 <div>
   <span

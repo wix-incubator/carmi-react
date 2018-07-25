@@ -137,4 +137,52 @@ describe('rendering', () => {
     expectRenders(2);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
+  it('higher order components', async () => {
+    const { Provider, funcLib } = carmiReact({
+      itemClicked: (instance, idx) => {
+        instance.setItem(idx, true);
+      },
+      'todos-list': function({ unclicked }, ...children) {
+        renderCounter++;
+        return React.createElement(
+          'div',
+          null,
+          children.concat(React.createElement('span', { key: 'unclicked' }, unclicked))
+        );
+      },
+      'todo-item': function({ onClick }, label) {
+        renderCounter++;
+        return React.createElement('span', { onClick }, label);
+      }
+    });
+    const todos = root.map((item, idx) => (
+      <todo-item key={idx} onClick={bind('itemClicked', idx)}>
+        {item
+          .get('clicked')
+          .ternary('+ ', '- ')
+          .plus(item.get('title'))}
+      </todo-item>
+    ));
+    const todosList = (
+      <todos-list unclicked={root.filter(item => item.get('clicked').not()).size()}>{todos}</todos-list>
+    );
+    const model = {
+      todosList,
+      setItem: setter(arg0, 'clicked')
+    };
+    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const initialState = [
+      { title: 'first', clicked: false },
+      { title: 'second', clicked: false },
+      { title: 'third', clicked: false }
+    ];
+    const inst = optCode(initialState, funcLib);
+    const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(4);
+    const items = mounted.root.findAllByType('span');
+    items[0].props.onClick();
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(2);
+  });
 });
