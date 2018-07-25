@@ -1,6 +1,6 @@
 const { compile, and, or, root, arg0, arg1, setter, splice, chain } = require('carmi');
 const carmiReact = require('../index');
-const createElement = require('../build');
+const { createElement, bind } = require('../build');
 const renderer = require('react-test-renderer');
 const React = require('react');
 
@@ -98,23 +98,19 @@ describe('rendering', () => {
   });
   it('multiple children support', async () => {
     const { Provider, funcLib } = carmiReact({
-      todo: function({ idx }, ...children) {
-        return renderEcho('span', {
-          children,
-          onClick: () => {
-            this.setItem(idx, true);
-          }
-        });
+      itemClicked: (instance, idx) => {
+        instance.setItem(idx, true);
       },
-      div: renderEcho.bind(null, 'div')
+      div: renderEcho.bind(null, 'div'),
+      span: renderEcho.bind(null, 'span')
     });
     const todos = root.map((item, idx) => (
-      <todo idx={idx} key={idx}>
+      <span key={idx} onClick={bind('itemClicked', idx)}>
         {item
           .get('clicked')
           .ternary('+ ', '- ')
           .plus(item.get('title'))}
-      </todo>
+      </span>
     ));
     const todosList = (
       <div>
@@ -135,10 +131,10 @@ describe('rendering', () => {
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
-    expectRenders(4);
+    expectRenders(5);
     const items = mounted.root.findAllByType('span');
     items[0].props.onClick();
-    expectRenders(1);
+    expectRenders(2);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
 });

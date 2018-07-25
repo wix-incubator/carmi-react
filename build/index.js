@@ -7,4 +7,8 @@ function createElement(type, props, ...children) {
   return chain({ type, props }).call('createElement');
 }
 
-module.exports = createElement;
+function bind(funcName, ...args) {
+  return chain([funcName, ...args]).call('bind');
+}
+
+module.exports = { createElement, bind };

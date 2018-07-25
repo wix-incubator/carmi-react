@@ -30,10 +30,10 @@ class CarmiObserver extends React.Component {
       children: context => {
         context.descriptorToCompsMap.set(this.props.descriptor, this);
         const { type, props, children } = this.props.descriptor;
-        if (!context.componentFromName.hasOwnProperty(type)) {
+        if (!context.extraFuncLib.hasOwnProperty(type)) {
           return React.createElement.apply(React, [type, props].concat(children || []));
         } else {
-          const cls = context.componentFromName[type];
+          const cls = context.extraFuncLib[type];
           if (cls.prototype && cls.prototype.render) {
             return React.createElement.apply(React, [cls, props].concat(children || []));
           } else {
@@ -45,17 +45,19 @@ class CarmiObserver extends React.Component {
   }
 }
 
-function init(componentFromName) {
-  componentFromName = componentFromName || {};
+function init(extraFuncLib) {
+  extraFuncLib = extraFuncLib || {};
   const descriptorToCompsMap = new WeakMap();
   const descriptorToElementsMap = new WeakMap();
+  const bindArrToFunctions = new WeakMap();
   const pendingFlush = new Set();
 
   const context = {
     descriptorToCompsMap,
     descriptorToElementsMap,
-    componentFromName,
+    extraFuncLib,
     pendingFlush,
+    bindArrToFunctions,
     root: null
   };
 
@@ -70,6 +72,15 @@ function init(componentFromName) {
       context.descriptorToElementsMap.set(descriptor, element);
     }
     return context.descriptorToElementsMap.get(descriptor);
+  }
+
+  function bind(args) {
+    if (!context.bindArrToFunctions.has(args)) {
+      context.bindArrToFunctions.set(args, function() {
+        extraFuncLib[args[0]].apply(null, [context.instance].concat(args.slice(1)));
+      });
+    }
+    return context.bindArrToFunctions.get(args);
   }
 
   function flush(val) {
@@ -87,7 +98,8 @@ function init(componentFromName) {
   }
 
   const funcLib = {
-    createElement
+    createElement,
+    bind
   };
 
   function Provider({ children, instance }) {
