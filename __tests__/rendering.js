@@ -1,6 +1,6 @@
 const { compile, and, or, root, arg0, arg1, setter, splice, chain } = require('carmi');
 const carmiReact = require('../index');
-const { createElement, bind } = require('../build');
+const { createElement, bind } = require('carmi/jsx');
 const renderer = require('react-test-renderer');
 const React = require('react');
 
@@ -115,7 +115,10 @@ describe('rendering', () => {
     const todosList = (
       <div>
         {todos}
-        <span>items not clicked:{root.filter(item => item.get('clicked').not()).size()}</span>
+        <span>
+          items not clicked:
+          {root.filter(item => item.get('clicked').not()).size()}
+        </span>
       </div>
     );
     const model = {
