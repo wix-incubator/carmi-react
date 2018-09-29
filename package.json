@@ -17,14 +17,14 @@
     "babel-jest": "^23.4.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
-    "carmi": "^0.1.45",
+    "carmi": "^0.1.46",
     "jest": "^23.4.1",
     "react": "^16.4.1",
     "react-test-renderer": "^16.4.1",
     "wnpm-ci": "latest"
   },
   "peerDependencies": {
-    "carmi": "^0.1.45",
+    "carmi": "^0.1.46",
     "react": "^16.4.0"
   }
 }
