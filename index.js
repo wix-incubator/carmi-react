@@ -24,12 +24,17 @@ class CarmiRoot extends React.Component {
 class CarmiObserver extends React.Component {
   constructor(props) {
     super(props);
+    this.context = null;
   }
   render() {
     return React.createElement(CarmiContext.Consumer, {
       children: context => {
-        context.descriptorToCompsMap.set(this.props.descriptor, this);
-        const { type, props, children } = this.props.descriptor;
+        this.context = context;
+        let { type, props, children } = this.props.descriptor;
+        props = { ...props };
+        if (props.hasOwnProperty('style')) {
+          props.style = { ...props.style };
+        }
         if (!context.extraFuncLib.hasOwnProperty(type)) {
           return React.createElement.apply(React, [type, props].concat(children || []));
         } else {
@@ -42,6 +47,20 @@ class CarmiObserver extends React.Component {
         }
       }
     });
+  }
+  componentDidMount() {
+    const context = this.context;
+    if (!context.descriptorToCompsMap.has(this.props.descriptor)) {
+      context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    }
+    context.descriptorToCompsMap.get(this.props.descriptor).add(this);
+  }
+  componentWillUnmount() {
+    const context = this.context;
+    if (!context.descriptorToCompsMap.has(this.props.descriptor)) {
+      context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    }
+    context.descriptorToCompsMap.get(this.props.descriptor).delete(this);
   }
 }
 
@@ -67,8 +86,12 @@ function init(extraFuncLib) {
     if (context.root && context.descriptorToCompsMap.has(descriptor)) {
       pendingFlush.add(descriptor);
     }
+    const newProps = { descriptor };
+    if (key !== null) {
+      newProps.key = key;
+    }
     if (!context.descriptorToElementsMap.has(descriptor)) {
-      const element = React.createElement(CarmiObserver, { descriptor, key });
+      const element = React.createElement(CarmiObserver, newProps);
       context.descriptorToElementsMap.set(descriptor, element);
     }
     return context.descriptorToElementsMap.get(descriptor);
@@ -77,22 +100,31 @@ function init(extraFuncLib) {
   function bind(args) {
     if (!context.bindArrToFunctions.has(args)) {
       context.bindArrToFunctions.set(args, function() {
-        extraFuncLib[args[0]].apply(null, [context.instance].concat(args.slice(1)));
+        if (extraFuncLib.hasOwnProperty(args[0])) {
+          extraFuncLib[args[0]].apply(null, [context.instance].concat(args.slice(1)));
+        } else if (typeof context.instance[args[0]] === 'function') {
+          context.instance[args[0]].apply(null, args.slice(1));
+        }
       });
     }
     return context.bindArrToFunctions.get(args);
   }
 
   function flush(val) {
+    let updateRoot = false;
     pendingFlush.forEach(element => {
       if (context.root) {
-        const comp = descriptorToCompsMap.get(element);
-        if (comp) {
-          comp.forceUpdate(() => {});
+        const comps = descriptorToCompsMap.get(element);
+        if (comps) {
+          comps.forEach(comp => comp.forceUpdate(() => {}));
         }
-        context.root.forceUpdate(() => {});
       }
+      updateRoot = true;
     });
+    if (updateRoot) {
+      context.root.forceUpdate(() => {});
+    }
+
     pendingFlush.clear();
     return val;
   }
