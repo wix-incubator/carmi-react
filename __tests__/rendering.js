@@ -1,4 +1,4 @@
-const { compile, and, or, root, arg0, arg1, setter, splice, chain } = require('carmi');
+const { compile, and, or, root, arg0, arg1, setter, splice, ternary, chain } = require('carmi');
 const carmiReact = require('../index');
 const { createElement, bind } = require('carmi/jsx');
 const renderer = require('react-test-renderer');
@@ -10,8 +10,12 @@ function renderEcho(type, props, ...children) {
   return React.createElement.apply(React, [type, props].concat(children));
 }
 
-function expectRenders(cnt) {
-  expect(cnt).toEqual(renderCounter);
+function expectRenders(cnt, compiler) {
+  if (compiler === 'optimizing') {
+    expect(renderCounter).toEqual(cnt);
+  } else {
+    expect(renderCounter).toBeGreaterThanOrEqual(cnt);
+  }
   renderCounter = 0;
 }
 
@@ -19,7 +23,7 @@ beforeEach(() => {
   renderCounter = 0;
 });
 
-describe('rendering', () => {
+describe.each(['optimizing', 'simple'])('rendering compiler %s', compiler => {
   it('basic rendering using DOM types directly', async () => {
     const { Provider, funcLib } = carmiReact();
     const todos = root.map((item, idx) => <span key={idx}>{item}</span>);
@@ -28,7 +32,7 @@ describe('rendering', () => {
       todosList,
       setItem: setter(arg0)
     };
-    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const optCode = eval(await compile(model, { compiler }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
@@ -49,17 +53,42 @@ describe('rendering', () => {
       todosList,
       setItem: setter(arg0)
     };
-    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const optCode = eval(await compile(model, { compiler }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
-    expectRenders(4);
+    expectRenders(4, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
     inst.setItem(1, 'changed the second item');
-    expectRenders(1);
+    expectRenders(1, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
     inst.setItem(3, 'Added a fourth item');
-    expectRenders(2);
+    expectRenders(2, compiler);
+    expect(mounted.toJSON()).toMatchSnapshot();
+  });
+  it('basic rendering changing root component', async () => {
+    const { Provider, funcLib } = carmiReact({
+      span: renderEcho.bind(null, 'span'),
+      div: renderEcho.bind(null, 'div')
+    });
+    const todos = root.map((item, idx) => <span key={idx}>{item}</span>);
+    const emptyList = <span>Empty</span>;
+    const todosList = ternary(root.size(), <div>{todos}</div>, emptyList);
+    const model = {
+      todosList,
+      splice: splice()
+    };
+    const optCode = eval(await compile(model, { compiler }));
+    const initialState = ['first'];
+    const inst = optCode(initialState, funcLib);
+    const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
+    expectRenders(2, compiler);
+    expect(mounted.toJSON()).toMatchSnapshot();
+    inst.splice(0, 1);
+    expectRenders(1, compiler);
+    expect(mounted.toJSON()).toMatchSnapshot();
+    inst.splice(0, 0, 'Added a new item first item');
+    expectRenders(2, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
   it('basic rendering using functions in compNames map wire events to instance', async () => {
@@ -85,15 +114,15 @@ describe('rendering', () => {
       todosList,
       setItem: setter(arg0)
     };
-    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const optCode = eval(await compile(model, { compiler }));
     const initialState = ['first', 'second', 'third'];
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
-    expectRenders(4);
+    expectRenders(4, compiler);
     const items = mounted.root.findAllByType('span');
     items[0].props.onClick();
-    expectRenders(1);
+    expectRenders(1, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
   it('multiple children support', async () => {
@@ -125,7 +154,7 @@ describe('rendering', () => {
       todosList,
       setItem: setter(arg0, 'clicked')
     };
-    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const optCode = eval(await compile(model, { compiler }));
     const initialState = [
       { title: 'first', clicked: false },
       { title: 'second', clicked: false },
@@ -134,10 +163,10 @@ describe('rendering', () => {
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
-    expectRenders(5);
+    expectRenders(5, compiler);
     const items = mounted.root.findAllByType('span');
     items[0].props.onClick();
-    expectRenders(2);
+    expectRenders(2, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
   it('higher order components', async () => {
@@ -173,7 +202,7 @@ describe('rendering', () => {
       todosList,
       setItem: setter(arg0, 'clicked')
     };
-    const optCode = eval(await compile(model, { compiler: 'optimizing' }));
+    const optCode = eval(await compile(model, { compiler }));
     const initialState = [
       { title: 'first', clicked: false },
       { title: 'second', clicked: false },
@@ -182,10 +211,10 @@ describe('rendering', () => {
     const inst = optCode(initialState, funcLib);
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
-    expectRenders(4);
+    expectRenders(4, compiler);
     const items = mounted.root.findAllByType('span');
     items[0].props.onClick();
     expect(mounted.toJSON()).toMatchSnapshot();
-    expectRenders(2);
+    expectRenders(2, compiler);
   });
 });

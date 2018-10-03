@@ -1,6 +1,28 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`rendering basic rendering using DOM types directly 1`] = `
+exports[`rendering compiler optimizing basic rendering changing root component 1`] = `
+<div>
+  <span>
+    first
+  </span>
+</div>
+`;
+
+exports[`rendering compiler optimizing basic rendering changing root component 2`] = `
+<span>
+  Empty
+</span>
+`;
+
+exports[`rendering compiler optimizing basic rendering changing root component 3`] = `
+<div>
+  <span>
+    Added a new item first item
+  </span>
+</div>
+`;
+
+exports[`rendering compiler optimizing basic rendering using DOM types directly 1`] = `
 <div>
   <span>
     first
@@ -14,7 +36,7 @@ exports[`rendering basic rendering using DOM types directly 1`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using DOM types directly 2`] = `
+exports[`rendering compiler optimizing basic rendering using DOM types directly 2`] = `
 <div>
   <span>
     first
@@ -28,7 +50,7 @@ exports[`rendering basic rendering using DOM types directly 2`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using DOM types directly 3`] = `
+exports[`rendering compiler optimizing basic rendering using DOM types directly 3`] = `
 <div>
   <span>
     first
@@ -45,7 +67,7 @@ exports[`rendering basic rendering using DOM types directly 3`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using functions in compNames map 1`] = `
+exports[`rendering compiler optimizing basic rendering using functions in compNames map 1`] = `
 <div>
   <span>
     first
@@ -59,7 +81,7 @@ exports[`rendering basic rendering using functions in compNames map 1`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using functions in compNames map 2`] = `
+exports[`rendering compiler optimizing basic rendering using functions in compNames map 2`] = `
 <div>
   <span>
     first
@@ -73,7 +95,7 @@ exports[`rendering basic rendering using functions in compNames map 2`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using functions in compNames map 3`] = `
+exports[`rendering compiler optimizing basic rendering using functions in compNames map 3`] = `
 <div>
   <span>
     first
@@ -90,7 +112,7 @@ exports[`rendering basic rendering using functions in compNames map 3`] = `
 </div>
 `;
 
-exports[`rendering basic rendering using functions in compNames map wire events to instance 1`] = `
+exports[`rendering compiler optimizing basic rendering using functions in compNames map wire events to instance 1`] = `
 <div>
   <span
     onClick={[Function]}
@@ -110,7 +132,7 @@ exports[`rendering basic rendering using functions in compNames map wire events 
 </div>
 `;
 
-exports[`rendering basic rendering using functions in compNames map wire events to instance 2`] = `
+exports[`rendering compiler optimizing basic rendering using functions in compNames map wire events to instance 2`] = `
 <div>
   <span
     onClick={[Function]}
@@ -130,7 +152,7 @@ exports[`rendering basic rendering using functions in compNames map wire events 
 </div>
 `;
 
-exports[`rendering higher order components 1`] = `
+exports[`rendering compiler optimizing higher order components 1`] = `
 <div>
   <span
     onClick={[Function]}
@@ -153,7 +175,7 @@ exports[`rendering higher order components 1`] = `
 </div>
 `;
 
-exports[`rendering higher order components 2`] = `
+exports[`rendering compiler optimizing higher order components 2`] = `
 <div>
   <span
     onClick={[Function]}
@@ -176,7 +198,7 @@ exports[`rendering higher order components 2`] = `
 </div>
 `;
 
-exports[`rendering multiple children support 1`] = `
+exports[`rendering compiler optimizing multiple children support 1`] = `
 <div>
   <span
     onClick={[Function]}
@@ -200,7 +222,253 @@ exports[`rendering multiple children support 1`] = `
 </div>
 `;
 
-exports[`rendering multiple children support 2`] = `
+exports[`rendering compiler optimizing multiple children support 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    + first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    items not clicked:
+    2
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering changing root component 1`] = `
+<div>
+  <span>
+    first
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering changing root component 2`] = `
+<span>
+  Empty
+</span>
+`;
+
+exports[`rendering compiler simple basic rendering changing root component 3`] = `
+<div>
+  <span>
+    Added a new item first item
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using DOM types directly 1`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    second
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using DOM types directly 2`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using DOM types directly 3`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+  <span>
+    Added a fourth item
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using functions in compNames map 1`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    second
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using functions in compNames map 2`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using functions in compNames map 3`] = `
+<div>
+  <span>
+    first
+  </span>
+  <span>
+    changed the second item
+  </span>
+  <span>
+    third
+  </span>
+  <span>
+    Added a fourth item
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using functions in compNames map wire events to instance 1`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple basic rendering using functions in compNames map wire events to instance 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    first!
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    third
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple higher order components 1`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    - first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    3
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple higher order components 2`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    + first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    2
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple multiple children support 1`] = `
+<div>
+  <span
+    onClick={[Function]}
+  >
+    - first
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - second
+  </span>
+  <span
+    onClick={[Function]}
+  >
+    - third
+  </span>
+  <span>
+    items not clicked:
+    3
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple multiple children support 2`] = `
 <div>
   <span
     onClick={[Function]}

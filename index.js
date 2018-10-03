@@ -5,6 +5,10 @@ const CarmiContext = React.createContext(null);
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
+    this.lastChildren = null;
+  }
+  shouldComponentUpdate(newProps) {
+    return newProps.children() !== this.lastChildren;
   }
   render() {
     return React.createElement(CarmiContext.Provider, {
@@ -14,7 +18,11 @@ class CarmiRoot extends React.Component {
   }
   componentDidMount() {
     this.props.value.root = this;
+    this.lastChildren = this.props.children();
     this.props.value.instance.$addListener(this.props.value.flush);
+  }
+  componentDidUpdate() {
+    this.lastChildren = this.props.children();
   }
   componentWillUnmount() {
     this.props.value.instance.$removeListener(this.props.value.flush);
@@ -55,6 +63,10 @@ class CarmiObserver extends React.Component {
     }
     context.descriptorToCompsMap.get(this.props.descriptor).add(this);
   }
+  componentDidUpdate() {
+    const context = this.context;
+    context.pendingFlush.delete(this);
+  }
   componentWillUnmount() {
     const context = this.context;
     if (!context.descriptorToCompsMap.has(this.props.descriptor)) {
@@ -84,7 +96,7 @@ function init(extraFuncLib) {
     const { props } = descriptor;
     const key = props && props.key;
     if (context.root && context.descriptorToCompsMap.has(descriptor)) {
-      pendingFlush.add(descriptor);
+      context.descriptorToCompsMap.get(descriptor).forEach(comp => pendingFlush.add(comp));
     }
     const newProps = { descriptor };
     if (key !== null) {
@@ -110,23 +122,12 @@ function init(extraFuncLib) {
     return context.bindArrToFunctions.get(args);
   }
 
-  function flush(val) {
-    let updateRoot = false;
-    pendingFlush.forEach(element => {
-      if (context.root) {
-        const comps = descriptorToCompsMap.get(element);
-        if (comps) {
-          comps.forEach(comp => comp.forceUpdate(() => {}));
-        }
-      }
-      updateRoot = true;
+  function flush() {
+    context.root.setState({});
+    pendingFlush.forEach(comp => {
+      comp.setState({});
     });
-    if (updateRoot) {
-      context.root.forceUpdate(() => {});
-    }
-
     pendingFlush.clear();
-    return val;
   }
 
   const funcLib = {
