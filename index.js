@@ -111,9 +111,9 @@ function init(extraFuncLib) {
 
   function bind(args) {
     if (!context.bindArrToFunctions.has(args)) {
-      context.bindArrToFunctions.set(args, function() {
+      context.bindArrToFunctions.set(args, function(...extraArgs) {
         if (extraFuncLib.hasOwnProperty(args[0])) {
-          extraFuncLib[args[0]].apply(null, [context.instance].concat(args.slice(1)));
+          extraFuncLib[args[0]].apply(null, [context.instance].concat(args.slice(1)).concat(extraArgs));
         } else if (typeof context.instance[args[0]] === 'function') {
           context.instance[args[0]].apply(null, args.slice(1));
         }
