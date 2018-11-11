@@ -1,6 +1,6 @@
-const { compile, and, or, root, arg0, arg1, setter, splice, ternary, chain } = require('carmi');
+const { compile, and, or, root, arg0, arg1, setter, splice, ternary, chain, bind } = require('carmi');
 const carmiReact = require('../index');
-const { createElement, bind } = require('carmi/jsx');
+const { createElement } = require('carmi/jsx');
 const renderer = require('react-test-renderer');
 const React = require('react');
 
@@ -23,7 +23,7 @@ beforeEach(() => {
   renderCounter = 0;
 });
 
-describe.each(['optimizing', 'simple'])('rendering compiler %s', compiler => {
+describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
   it('basic rendering using DOM types directly', async () => {
     const { Provider, funcLib } = carmiReact();
     const todos = root.map((item, idx) => <span key={idx}>{item}</span>);
@@ -127,9 +127,6 @@ describe.each(['optimizing', 'simple'])('rendering compiler %s', compiler => {
   });
   it('multiple children support', async () => {
     const { Provider, funcLib } = carmiReact({
-      itemClicked: (instance, idx) => {
-        instance.setItem(idx, true);
-      },
       div: renderEcho.bind(null, 'div'),
       span: renderEcho.bind(null, 'span')
     });
@@ -160,7 +157,12 @@ describe.each(['optimizing', 'simple'])('rendering compiler %s', compiler => {
       { title: 'second', clicked: false },
       { title: 'third', clicked: false }
     ];
-    const inst = optCode(initialState, funcLib);
+    const inst = optCode(initialState, {
+      ...funcLib,
+      itemClicked: function(idx) {
+        this.setItem(idx, true);
+      }
+    });
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
     expectRenders(5, compiler);
@@ -208,7 +210,12 @@ describe.each(['optimizing', 'simple'])('rendering compiler %s', compiler => {
       { title: 'second', clicked: false },
       { title: 'third', clicked: false }
     ];
-    const inst = optCode(initialState, funcLib);
+    const inst = optCode(initialState, {
+      ...funcLib,
+      itemClicked: function(idx) {
+        this.setItem(idx, true);
+      }
+    });
     const mounted = renderer.create(Provider({ children: () => inst.todosList, instance: inst }));
     expect(mounted.toJSON()).toMatchSnapshot();
     expectRenders(4, compiler);
