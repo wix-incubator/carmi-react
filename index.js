@@ -30,53 +30,42 @@ class CarmiRoot extends React.Component {
 }
 
 class CarmiObserver extends React.Component {
-  constructor(props) {
-    super(props);
-    this.context = null;
-  }
   render() {
-    return React.createElement(CarmiContext.Consumer, {
-      children: context => {
-        this.context = context;
-        let descriptor = this.props.descriptor;
-        const type = descriptor[0];
-        const props = descriptor[1] || {};
-        if (props.hasOwnProperty('style')) {
-          props.style = { ...props.style };
-        }
-        const children = descriptor.slice(2);
-        if (!context.compsLib.hasOwnProperty(type)) {
-          return React.createElement.apply(React, [type, props].concat(children || []));
-        } else {
-          const cls = context.compsLib[type];
-          if (cls.prototype && cls.prototype.render) {
-            return React.createElement.apply(React, [cls, props].concat(children || []));
-          } else {
-            return cls.apply(context.instance, [props].concat(children || []));
-          }
-        }
+    let descriptor = this.props.descriptor;
+    const type = descriptor[0];
+    const props = descriptor[1] || {};
+    if (props.hasOwnProperty('style')) {
+      props.style = { ...props.style };
+    }
+    const children = descriptor.slice(2);
+    if (!this.context.compsLib.hasOwnProperty(type)) {
+      return React.createElement.apply(React, [type, props].concat(children || []));
+    } else {
+      const cls = this.context.compsLib[type];
+      if (cls.prototype && cls.prototype.render) {
+        return React.createElement.apply(React, [cls, props].concat(children || []));
+      } else {
+        return cls.apply(this.context.instance, [props].concat(children || []));
       }
-    });
+    }
   }
   componentDidMount() {
-    const context = this.context;
-    if (!context.descriptorToCompsMap.has(this.props.descriptor)) {
-      context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    if (!this.context.descriptorToCompsMap.has(this.props.descriptor)) {
+      this.context.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
-    context.descriptorToCompsMap.get(this.props.descriptor).add(this);
+    this.context.descriptorToCompsMap.get(this.props.descriptor).add(this);
   }
   componentDidUpdate() {
-    const context = this.context;
-    context.pendingFlush.delete(this);
+    this.context.pendingFlush.delete(this);
   }
   componentWillUnmount() {
-    const context = this.context;
-    if (!context.descriptorToCompsMap.has(this.props.descriptor)) {
-      context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    if (!this.context.descriptorToCompsMap.has(this.props.descriptor)) {
+      this.context.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
-    context.descriptorToCompsMap.get(this.props.descriptor).delete(this);
+    this.context.descriptorToCompsMap.get(this.props.descriptor).delete(this);
   }
 }
+CarmiObserver.contextType = CarmiContext;
 
 function init(compsLib) {
   compsLib = compsLib || {};
@@ -111,6 +100,7 @@ function init(compsLib) {
       const props = { descriptor, type };
       if (key !== null) {
         props.origKey = key;
+        props.key = key;
       }
       const element = React.createElement(CarmiObserver, props);
       context.descriptorToElementsMap.set(descriptor, element);
