@@ -2,6 +2,29 @@ const React = require('react');
 
 const CarmiContext = React.createContext(null);
 
+const privatesPerInstance = new WeakMap();
+
+function getPrivates(instance) {
+  if (!privatesPerInstance.has(instance)) {
+    const privates = {
+      descriptorToCompsMap: new WeakMap(),
+      descriptorToElementsMap: new WeakMap(),
+      pendingFlush: new Set(),
+      compsLib: {},
+      root: null,
+      flush: () => {
+        privates.root.setState({});
+        privates.pendingFlush.forEach(comp => {
+          comp.setState({});
+        });
+        privates.pendingFlush.clear();
+      }
+    };
+    privatesPerInstance.set(instance, privates);
+  }
+  return privatesPerInstance.get(instance);
+}
+
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
@@ -17,15 +40,17 @@ class CarmiRoot extends React.Component {
     });
   }
   componentDidMount() {
-    this.props.value.root = this;
+    const privates = getPrivates(this.props.value);
+    privates.root = this;
     this.lastChildren = this.props.children();
-    this.props.value.instance.$addListener(this.props.value.flush);
+    this.props.value.$addListener(privates.flush);
   }
   componentDidUpdate() {
     this.lastChildren = this.props.children();
   }
   componentWillUnmount() {
-    this.props.value.instance.$removeListener(this.props.value.flush);
+    const privates = getPrivates(this.props.value);
+    this.props.value.$removeListener(privates.flush);
   }
 }
 
@@ -33,103 +58,71 @@ class CarmiObserver extends React.Component {
   render() {
     let descriptor = this.props.descriptor;
     const type = descriptor[0];
-    const props = descriptor[1] || {};
-    if (props.hasOwnProperty('style')) {
-      props.style = { ...props.style };
-    }
-    const children = descriptor.slice(2);
-    if (!this.context.compsLib.hasOwnProperty(type)) {
-      return React.createElement.apply(React, [type, props].concat(children || []));
-    } else {
-      const cls = this.context.compsLib[type];
-      if (cls.prototype && cls.prototype.render) {
-        return React.createElement.apply(React, [cls, props].concat(children || []));
-      } else {
-        return cls.apply(this.context.instance, [props].concat(children || []));
+    let props = null;
+    if (descriptor[1]) {
+      props = { ...descriptor[1] };
+      if (props.hasOwnProperty('style')) {
+        props.style = { ...descriptor[1].style };
       }
     }
+    const children = descriptor.slice(2);
+    const privates = getPrivates(this.context);
+    const Component = privates.compsLib[type] || type;
+    return React.createElement(Component, props, ...children);
   }
   componentDidMount() {
-    if (!this.context.descriptorToCompsMap.has(this.props.descriptor)) {
-      this.context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    const privates = getPrivates(this.context);
+    if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
+      privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
-    this.context.descriptorToCompsMap.get(this.props.descriptor).add(this);
+    privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
   }
   componentDidUpdate() {
-    this.context.pendingFlush.delete(this);
+    const privates = getPrivates(this.context);
+    privates.pendingFlush.delete(this);
   }
   componentWillUnmount() {
-    if (!this.context.descriptorToCompsMap.has(this.props.descriptor)) {
-      this.context.descriptorToCompsMap.set(this.props.descriptor, new Set());
+    const privates = getPrivates(this.context);
+    if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
+      privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
-    this.context.descriptorToCompsMap.get(this.props.descriptor).delete(this);
+    privates.descriptorToCompsMap.get(this.props.descriptor).delete(this);
   }
 }
 CarmiObserver.contextType = CarmiContext;
 
-function init(compsLib) {
-  compsLib = compsLib || {};
-  const descriptorToCompsMap = new WeakMap();
-  const descriptorToElementsMap = new WeakMap();
-  const pendingFlush = new Set();
-
-  const context = {
-    descriptorToCompsMap,
-    descriptorToElementsMap,
-    compsLib,
-    pendingFlush,
-    root: null
-  };
-
-  function getMaybeKey(props, name) {
-    return props && props.hasOwnProperty(name) ? props[name] : null;
-  }
-
-  function createElement(descriptor) {
-    const key = getMaybeKey(descriptor[1], 'key');
-    const type = descriptor[0];
-    if (context.root && context.descriptorToCompsMap.has(descriptor)) {
-      context.descriptorToCompsMap.get(descriptor).forEach(comp => pendingFlush.add(comp));
-    }
-    const prevElement = context.descriptorToElementsMap.get(descriptor);
-    if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
-      if (context.root && context.descriptorToCompsMap.has(descriptor)) {
-        context.descriptorToCompsMap.get(descriptor).forEach(comp => pendingFlush.add(comp));
-      }
-    } else {
-      const props = { descriptor, type };
-      if (key !== null) {
-        props.origKey = key;
-        props.key = key;
-      }
-      const element = React.createElement(CarmiObserver, props);
-      context.descriptorToElementsMap.set(descriptor, element);
-    }
-    return context.descriptorToElementsMap.get(descriptor);
-  }
-
-  function flush() {
-    context.root.setState({});
-    pendingFlush.forEach(comp => {
-      comp.setState({});
-    });
-    pendingFlush.clear();
-  }
-
-  const funcLib = {
-    createElement
-  };
-
-  function Provider({ children, instance }) {
-    context.instance = instance;
-    context.flush = flush;
-    return React.createElement(CarmiRoot, { children, value: context });
-  }
-
-  return {
-    funcLib,
-    Provider
-  };
+function Provider({ children, value, compsLib = {} }) {
+  const privates = getPrivates(value);
+  privates.compsLib = compsLib;
+  return React.createElement(CarmiRoot, { children, value });
 }
 
-module.exports = init;
+function getMaybeKey(props, name) {
+  return props && props.hasOwnProperty(name) ? props[name] : null;
+}
+
+function createElement(descriptor) {
+  const key = getMaybeKey(descriptor[1], 'key');
+  const type = descriptor[0];
+  const privates = getPrivates(this);
+  const prevElement = privates.descriptorToElementsMap.get(descriptor);
+  if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
+    if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
+      privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
+    }
+  } else {
+    const props = { descriptor, type };
+    if (key !== null) {
+      props.origKey = key;
+      props.key = key;
+    }
+    const element = React.createElement(CarmiObserver, props);
+    privates.descriptorToElementsMap.set(descriptor, element);
+  }
+  return privates.descriptorToElementsMap.get(descriptor);
+}
+
+module.exports = {
+  carmiReactFnLib: { createElement },
+  Provider
+};
