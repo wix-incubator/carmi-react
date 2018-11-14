@@ -1,6 +1,6 @@
 {
   "name": "carmi-react",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Integration between Carmi and React",
   "main": "index.js",
   "author": "Avi Marcus",
