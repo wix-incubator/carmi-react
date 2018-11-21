@@ -112,6 +112,20 @@ exports[`rendering compiler optimizing basic rendering using functions in compNa
 </div>
 `;
 
+exports[`rendering compiler optimizing copy props to observer 1`] = `
+<div
+  className="visible"
+  id="test"
+/>
+`;
+
+exports[`rendering compiler optimizing copy props to observer 2`] = `
+<div
+  className="visible"
+  id="changed"
+/>
+`;
+
 exports[`rendering compiler optimizing multiple children support 1`] = `
 <div>
   <span
@@ -270,6 +284,20 @@ exports[`rendering compiler simple basic rendering using functions in compNames 
     Added a fourth item
   </span>
 </div>
+`;
+
+exports[`rendering compiler simple copy props to observer 1`] = `
+<div
+  className="visible"
+  id="test"
+/>
+`;
+
+exports[`rendering compiler simple copy props to observer 2`] = `
+<div
+  className="visible"
+  id="changed"
+/>
 `;
 
 exports[`rendering compiler simple multiple children support 1`] = `

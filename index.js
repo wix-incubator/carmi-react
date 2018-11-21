@@ -97,26 +97,39 @@ function Provider({ children, value, compsLib = {} }) {
   return React.createElement(CarmiRoot, { children, value });
 }
 
+
 function getMaybeKey(props, name) {
   return props && props.hasOwnProperty(name) ? props[name] : null;
 }
 
+
 function createElement(descriptor) {
-  const key = getMaybeKey(descriptor[1], 'key');
   const type = descriptor[0];
+  const childProps = descriptor[1] || {};
+  const { ref, key: rawKey, ...childExtraProps } = childProps;
+  const key = getMaybeKey(childProps, 'key')
   const privates = getPrivates(this);
   const prevElement = privates.descriptorToElementsMap.get(descriptor);
   if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
     if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
       privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
     }
+    Object.assign(prevElement.props, childExtraProps);
   } else {
     const props = { descriptor, type };
     if (key !== null) {
       props.origKey = key;
       props.key = key;
     }
-    const element = React.createElement(CarmiObserver, props);
+    const rawElement = React.createElement(CarmiObserver, { ...props, ...childExtraProps });
+    // sorry about doing it but 
+    // we short circuit the reconcilation code of React
+    // and we need to mutate the props in place
+    // so a parent component that is aware of the expected props
+    // of a child can access them, even if they changed since the
+    // last time React.createElement was triggered
+    const element = { ...rawElement }
+    element.props = { ...rawElement.props };
     privates.descriptorToElementsMap.set(descriptor, element);
   }
   return privates.descriptorToElementsMap.get(descriptor);

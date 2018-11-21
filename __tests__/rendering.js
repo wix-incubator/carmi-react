@@ -167,4 +167,34 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     expectRenders(2, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
   });
+  it('copy props to observer', async () => {
+    const elem = <div id={root.get('id')} className={root.get('className')}></div>
+    const model = {
+      elem,
+      setId: setter('id'),
+      setClassName: setter('className')
+    };
+    const optCode = eval(await compile(model, { compiler }));
+    const initialState = {id: 'test', className:'visible'};
+    const inst = optCode(initialState, {
+      ...carmiReactFnLib,
+      itemClicked: function (idx) {
+        this.setItem(idx, true);
+      }
+    });
+    const mounted = renderer.create(
+      React.createElement(Provider, {
+        children: () => inst.elem,
+        value: inst,
+        compsLib
+      })
+    );
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(1, compiler);
+    expect(inst.elem.props.id).toEqual('test');
+    inst.setId('changed');
+    expectRenders(1, compiler);
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expect(inst.elem.props.id).toEqual('changed');
+  });
 });
