@@ -24,7 +24,7 @@
     "wnpm-ci": "latest"
   },
   "peerDependencies": {
-    "carmi": "^0.2.3",
+    "carmi": "^1.0.4",
     "react": "^16.6.1"
   }
 }
