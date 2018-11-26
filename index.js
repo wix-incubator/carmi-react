@@ -83,6 +83,7 @@ class CarmiObserver extends React.Component {
   }
   componentWillUnmount() {
     const privates = getPrivates(this.context);
+    privates.pendingFlush.delete(this);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
@@ -102,12 +103,12 @@ function getMaybeKey(props, name) {
   return props && props.hasOwnProperty(name) ? props[name] : null;
 }
 
-
 function createElement(descriptor) {
   const type = descriptor[0];
   const childProps = descriptor[1] || {};
-  const { ref, key: rawKey, ...childExtraProps } = childProps;
-  const key = getMaybeKey(childProps, 'key')
+  const { ref: rawRef, key: rawKey, ...childExtraProps } = childProps;
+  const ref = getMaybeKey(childProps, 'ref');
+  const key = getMaybeKey(childProps, 'key');
   const privates = getPrivates(this);
   const prevElement = privates.descriptorToElementsMap.get(descriptor);
   if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
@@ -121,7 +122,7 @@ function createElement(descriptor) {
       props.origKey = key;
       props.key = key;
     }
-    const rawElement = React.createElement(CarmiObserver, { ...props, ...childExtraProps });
+    const rawElement = React.createElement(React.forwardRef((forwardProps, forwardedRef) => React.createElement( CarmiObserver, {...forwardProps, forwardedRef})), { ...props, ...childExtraProps });
     // sorry about doing it but 
     // we short circuit the reconcilation code of React
     // and we need to mutate the props in place

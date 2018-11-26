@@ -18,6 +18,15 @@ function getCompsLib({ createElement }) {
       renderCounter++;
       return <span {...props}></span>
     },
+    'input': class InputComponent extends React.Component {
+      render() {
+        renderCounter++;
+        return <input {...this.props}></input>
+      }
+      isMyComp() {
+        return `yes:${this.props.value}`
+      }
+    },
     TodoItem: class TodoItem extends React.Component {
       render() {
         renderCounter++;
@@ -196,5 +205,31 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     expectRenders(1, compiler);
     expect(mounted.toJSON()).toMatchSnapshot();
     expect(inst.elem.props.id).toEqual('changed');
+  });
+  it('refs forwarding should work', async () => {
+    const elem = <input ref={bind('refToInput')} value={root.get('value')}></input>
+    const model = {
+      elem,
+      setValue: setter('value')
+    };
+    const optCode = eval(await compile(model, { compiler }));
+    const initialState = {value: 'test'};
+    let currentRef = null;
+    const inst = optCode(initialState, {
+      ...carmiReactFnLib,
+      refToInput: function (ref) {
+        currentRef = ref;
+      }
+    });
+    const mounted = renderer.create(
+      React.createElement(Provider, {
+        children: () => inst.elem,
+        value: inst,
+        compsLib
+      })
+    );
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(1, compiler);
+    expect(currentRef.isMyComp()).toEqual('yes:test');
   });
 });
