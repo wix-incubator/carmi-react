@@ -5,6 +5,7 @@ const renderer = require('react-test-renderer');
 const React = require('react');
 
 let renderCounter = 0;
+let markRenderCalls = [];
 
 // inside this function React.createElement is used
 // outside CARMI model
@@ -55,6 +56,7 @@ function expectRenders(cnt, compiler) {
 
 beforeEach(() => {
   renderCounter = 0;
+  markRenderCalls = [];
 });
 
 describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
@@ -231,5 +233,78 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     expect(mounted.toJSON()).toMatchSnapshot();
     expectRenders(1, compiler);
     expect(currentRef.isMyComp()).toEqual('yes:test');
+  });
+  describe('on render start/end hooks', async () => {
+    it('should invoke on first render and after change', async () => {
+      const elem = <div
+        className={root.get('className')}
+        onRenderStart={bind('markRender', true)}
+        onRenderEnd={bind('markRender', false)}
+      >Empty</div>;
+      const model = {
+        elem,
+        setClassName: setter('className'),
+      };
+      const optCode = eval(await compile(model, {compiler}));
+      const initialState = {
+        className: 'initial'
+      };
+      const inst = optCode(initialState, {
+        ...carmiReactFnLib,
+        markRender: function (value) {
+          markRenderCalls.push(value);
+        }
+      });
+      const mounted = renderer.create(
+        React.createElement(Provider, {
+          children: () => inst.elem,
+          value: inst,
+          compsLib
+        })
+      );
+
+      //Check first render
+      expect(mounted.toJSON()).toMatchSnapshot();
+      expectRenders(1, compiler);
+      expect(markRenderCalls).toEqual([true, false]);
+
+      // Trigger change
+      inst.setClassName('changed');
+
+      // Check re-render
+      expectRenders(1, compiler);
+      expect(mounted.toJSON()).toMatchSnapshot();
+      expect(markRenderCalls).toEqual([true, false, true, false]);
+    });
+
+    it('should not pass markRender functions to component', async () => {
+      const propsForComponent = {somePropKey: 'somePropValue'};
+      const elem = createElement('div', {
+        ...propsForComponent,
+        onRenderStart: bind('markRender', true),
+        onRenderEnd: bind('markRender', false)
+      }, 'Empty');
+      const model = {
+        elem
+      };
+      const optCode = eval(await compile(model, {compiler}));
+      const initialState = {};
+      const inst = optCode(initialState, {
+        ...carmiReactFnLib,
+        markRender: function (value) {
+          markRenderCalls.push(value);
+        }
+      });
+      const mounted = renderer.create(
+        React.createElement(Provider, {
+          children: () => inst.elem,
+          value: inst,
+          compsLib
+        })
+      );
+
+      expect(mounted.toJSON()).toMatchSnapshot();
+      expect(mounted.toJSON().props).toEqual(propsForComponent);
+    });
   });
 });

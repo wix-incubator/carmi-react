@@ -25,6 +25,12 @@ function getPrivates(instance) {
   return privatesPerInstance.get(instance);
 }
 
+function invoke(fn) {
+  if (typeof fn === 'function') {
+    fn();
+  }
+}
+
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
@@ -55,14 +61,20 @@ class CarmiRoot extends React.Component {
 }
 
 class CarmiObserver extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+
   render() {
     let descriptor = this.props.descriptor;
     const type = descriptor[0];
     let props = null;
     if (descriptor[1]) {
-      props = { ...descriptor[1] };
+      const {onRenderStart, onRenderEnd, ...compProps} = {...descriptor[1]};
+      props = compProps;
       if (props.hasOwnProperty('style')) {
-        props.style = { ...descriptor[1].style };
+        props.style = {...descriptor[1].style};
       }
     }
     const children = descriptor.slice(2);
@@ -70,16 +82,24 @@ class CarmiObserver extends React.Component {
     const Component = privates.compsLib[type] || type;
     return React.createElement(Component, props, ...children);
   }
+
+  static getDerivedStateFromProps(props) {
+    invoke(props.onRenderStart);
+    return null;
+  }
+
   componentDidMount() {
     const privates = getPrivates(this.context);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
     privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
+    invoke(this.props.onRenderEnd);
   }
   componentDidUpdate() {
     const privates = getPrivates(this.context);
     privates.pendingFlush.delete(this);
+    invoke(this.props.onRenderEnd);
   }
   componentWillUnmount() {
     const privates = getPrivates(this.context);
