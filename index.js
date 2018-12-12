@@ -3,6 +3,7 @@ const React = require('react');
 const CarmiContext = React.createContext(null);
 
 const privatesPerInstance = new WeakMap();
+const instanceByPointer = new WeakMap();
 
 function getPrivates(instance) {
   if (!privatesPerInstance.has(instance)) {
@@ -31,17 +32,23 @@ function invoke(fn) {
   }
 }
 
+function getPrivatesByPointer(pointer) {
+  return getPrivates(instanceByPointer.get(pointer));
+}
+
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
     this.lastChildren = null;
+    this.token = {};
+    instanceByPointer.set(this.token, props.value);
   }
   shouldComponentUpdate(newProps) {
     return newProps.children() !== this.lastChildren;
   }
   render() {
     return React.createElement(CarmiContext.Provider, {
-      value: this.props.value,
+      value: this.token,
       children: this.props.children()
     });
   }
@@ -78,7 +85,7 @@ class CarmiObserver extends React.Component {
       }
     }
     const children = descriptor.slice(2);
-    const privates = getPrivates(this.context);
+    const privates = getPrivatesByPointer(this.context);
     const Component = privates.compsLib[type] || type;
     return React.createElement(Component, props, ...children);
   }
@@ -89,7 +96,7 @@ class CarmiObserver extends React.Component {
   }
 
   componentDidMount() {
-    const privates = getPrivates(this.context);
+    const privates = getPrivatesByPointer(this.context);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
@@ -97,12 +104,12 @@ class CarmiObserver extends React.Component {
     invoke(this.props.onRenderEnd);
   }
   componentDidUpdate() {
-    const privates = getPrivates(this.context);
+    const privates = getPrivatesByPointer(this.context);
     privates.pendingFlush.delete(this);
     invoke(this.props.onRenderEnd);
   }
   componentWillUnmount() {
-    const privates = getPrivates(this.context);
+    const privates = getPrivatesByPointer(this.context);
     privates.pendingFlush.delete(this);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
