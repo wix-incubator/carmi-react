@@ -38,6 +38,9 @@ function getCompsLib({ createElement }) {
         renderCounter++;
         return <span {...props}></span>
       }
+    },
+    clone: (props) => {
+      return <div>{React.cloneElement(props.children, {style:props.childOverrides.style})}</div>
     }
   }
 }
@@ -231,5 +234,30 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     expect(mounted.toJSON()).toMatchSnapshot();
     expectRenders(1, compiler);
     expect(currentRef.isMyComp()).toEqual('yes:test');
+  });
+  it('clone', async () => {
+    const elem = <clone childOverrides={{style:{background:root.get('background')}}}><span>{root.get('title')}</span></clone>
+    const model = {
+      elem,
+      setBackground: setter('background'),
+      setTitle: setter('title')
+    };
+    const optCode = eval(await compile(model, { compiler }));
+    const initialState = {title: 'hello', background: 'red'};
+    const inst = optCode(initialState, {
+      ...carmiReactFnLib,
+    });
+    const mounted = renderer.create(
+      React.createElement(Provider, {
+        children: () => inst.elem,
+        value: inst,
+        compsLib
+      })
+    );
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(1, compiler);
+    inst.setBackground('blue');
+    expect(mounted.toJSON()).toMatchSnapshot();
+    expectRenders(1, compiler);
   });
 });

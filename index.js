@@ -61,15 +61,23 @@ class CarmiRoot extends React.Component {
   }
 }
 
+const BUILT_IN_PROPS = {
+  origKey: true,
+  key: true,
+  ref: true,
+  descriptor: true,
+  type: true
+}
+
 class CarmiObserver extends React.Component {
   render() {
     let descriptor = this.props.descriptor;
     const type = descriptor[0];
     let props = null;
-    if (descriptor[1]) {
-      props = { ...descriptor[1] };
+    if (descriptor[1] || this.props.overrides) {
+      props = descriptor[1] ? { ...descriptor[1], ...this.props.overrides } : this.props.overrides;
       if (props.hasOwnProperty('style')) {
-        props.style = { ...descriptor[1].style };
+        props.style = { ...props.style };
       }
     }
     const children = descriptor.slice(2);
@@ -113,8 +121,7 @@ function getMaybeKey(props, name) {
 function createElement(descriptor) {
   const type = descriptor[0];
   const childProps = descriptor[1] || {};
-  const { ref: rawRef, key: rawKey, ...childExtraProps } = childProps;
-  const ref = getMaybeKey(childProps, 'ref');
+  const { key: rawKey, ...childExtraProps } = childProps;
   const key = getMaybeKey(childProps, 'key');
   const privates = getPrivates(this);
   const prevElement = privates.descriptorToElementsMap.get(descriptor);
@@ -123,13 +130,27 @@ function createElement(descriptor) {
       privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
     }
     Object.assign(prevElement.props, childExtraProps);
+    Object.keys(prevElement.props).forEach(prop => {
+      if (!childExtraProps.hasOwnProperty(prop) && !BUILT_IN_PROPS.hasOwnProperty(prop)) {
+        delete prevElement.props[prop];
+      }
+    });
   } else {
     const props = { descriptor, type };
     if (key !== null) {
       props.origKey = key;
       props.key = key;
     }
-    const rawElement = React.createElement(React.forwardRef((forwardProps, forwardedRef) => React.createElement( CarmiObserver, {...forwardProps, forwardedRef})), { ...props, ...childExtraProps });
+    const rawElement = React.createElement(React.forwardRef((forwardProps, forwardedRef) => {
+      let overrides = null;
+      Object.keys(forwardProps).forEach(prop => {
+        if (!BUILT_IN_PROPS.hasOwnProperty(prop) && forwardProps[prop] !== childProps[prop]) {
+          overrides = overrides || {};
+          overrides[prop] = forwardProps[prop];
+        }
+      })
+      return React.createElement( CarmiObserver, {...props,overrides, forwardedRef})
+    }), { ...props, ...childExtraProps });
     // sorry about doing it but 
     // we short circuit the reconcilation code of React
     // and we need to mutate the props in place

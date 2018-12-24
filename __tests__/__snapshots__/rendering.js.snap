@@ -112,6 +112,34 @@ exports[`rendering compiler optimizing basic rendering using functions in compNa
 </div>
 `;
 
+exports[`rendering compiler optimizing clone 1`] = `
+<div>
+  <span
+    style={
+      Object {
+        "background": "red",
+      }
+    }
+  >
+    hello
+  </span>
+</div>
+`;
+
+exports[`rendering compiler optimizing clone 2`] = `
+<div>
+  <span
+    style={
+      Object {
+        "background": "blue",
+      }
+    }
+  >
+    hello
+  </span>
+</div>
+`;
+
 exports[`rendering compiler optimizing copy props to observer 1`] = `
 <div
   className="visible"
@@ -288,6 +316,34 @@ exports[`rendering compiler simple basic rendering using functions in compNames 
   </span>
   <span>
     Added a fourth item
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple clone 1`] = `
+<div>
+  <span
+    style={
+      Object {
+        "background": "red",
+      }
+    }
+  >
+    hello
+  </span>
+</div>
+`;
+
+exports[`rendering compiler simple clone 2`] = `
+<div>
+  <span
+    style={
+      Object {
+        "background": "blue",
+      }
+    }
+  >
+    hello
   </span>
 </div>
 `;
