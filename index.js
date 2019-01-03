@@ -66,11 +66,13 @@ const BUILT_IN_PROPS = {
   key: true,
   ref: true,
   descriptor: true,
-  type: true
+  type: true,
+  dirtyFlag: true
 }
 
 class CarmiObserver extends React.Component {
   render() {
+    this.props.dirtyFlag[0] = false;
     let descriptor = this.props.descriptor;
     const type = descriptor[0];
     let props = null;
@@ -91,6 +93,9 @@ class CarmiObserver extends React.Component {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
     privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
+    if (this.props.dirtyFlag[0]) {
+      this.setState({});
+    }
   }
   componentDidUpdate() {
     const privates = getPrivatesByPointer(this.context);
@@ -128,6 +133,8 @@ function createElement(descriptor) {
   if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
     if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
       privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
+    } else {
+      prevElement.props.dirtyFlag[0] = true;
     }
     Object.assign(prevElement.props, childExtraProps);
     Object.keys(prevElement.props).forEach(prop => {
@@ -136,7 +143,8 @@ function createElement(descriptor) {
       }
     });
   } else {
-    const props = { descriptor, type };
+    const dirtyFlag = [true];
+    const props = { descriptor, type, dirtyFlag };
     if (key !== null) {
       props.origKey = key;
       props.key = key;
