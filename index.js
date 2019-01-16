@@ -2,11 +2,11 @@ const React = require('react');
 
 const CarmiContext = React.createContext(null);
 
-const privatesPerInstance = new WeakMap();
-const instanceByPointer = new WeakMap();
+const privatesByPointer = new WeakMap();
+const pointerByInstance = new WeakMap();
 
-function getPrivates(instance) {
-  if (!privatesPerInstance.has(instance)) {
+function getPrivatesByPointer(pointer) {
+  if (!privatesByPointer.has(pointer)) {
     const privates = {
       descriptorToCompsMap: new WeakMap(),
       descriptorToElementsMap: new WeakMap(),
@@ -21,33 +21,33 @@ function getPrivates(instance) {
         privates.pendingFlush.clear();
       }
     };
-    privatesPerInstance.set(instance, privates);
+    privatesByPointer.set(pointer, privates);
   }
-  return privatesPerInstance.get(instance);
+  return privatesByPointer.get(pointer);
 }
 
-function getPrivatesByPointer(pointer) {
-  return getPrivates(instanceByPointer.get(pointer));
+function getPrivatesByInstance(instance) {
+  if (!pointerByInstance.has(instance)) {
+    pointerByInstance.set(instance, {});
+  }
+  return getPrivatesByPointer(pointerByInstance.get(instance));
 }
 
 class CarmiRoot extends React.Component {
   constructor(props) {
     super(props);
     this.lastChildren = null;
-    this.token = {};
-    instanceByPointer.set(this.token, props.value);
   }
   shouldComponentUpdate(newProps) {
     return newProps.children() !== this.lastChildren;
   }
   render() {
     return React.createElement(CarmiContext.Provider, {
-      value: this.token,
       children: this.props.children()
     });
   }
   componentDidMount() {
-    const privates = getPrivates(this.props.value);
+    const privates = getPrivatesByInstance(this.props.value);
     privates.root = this;
     this.lastChildren = this.props.children();
     this.props.value.$addListener(privates.flush);
@@ -56,7 +56,7 @@ class CarmiRoot extends React.Component {
     this.lastChildren = this.props.children();
   }
   componentWillUnmount() {
-    const privates = getPrivates(this.props.value);
+    const privates = getPrivatesByInstance(this.props.value);
     this.props.value.$removeListener(privates.flush);
   }
 }
@@ -67,28 +67,28 @@ const BUILT_IN_PROPS = {
   ref: true,
   descriptor: true,
   type: true,
-  dirtyFlag: true
+  dirtyFlag: true,
+  token: true
 }
 
 class CarmiObserver extends React.Component {
   render() {
     this.props.dirtyFlag[0] = false;
-    let descriptor = this.props.descriptor;
-    const type = descriptor[0];
+    const descriptor = this.props.descriptor;
+    const {type, children, props: originalProps} = parseDescriptor(descriptor);
     let props = null;
-    if (descriptor[1] || this.props.overrides) {
-      props = descriptor[1] ? { ...descriptor[1], ...this.props.overrides } : this.props.overrides;
+    if (originalProps || this.props.overrides) {
+      props = originalProps ? { ...originalProps, ...this.props.overrides } : this.props.overrides;
       if (props.hasOwnProperty('style')) {
         props.style = { ...props.style };
       }
     }
-    const children = descriptor.slice(2);
-    const privates = getPrivatesByPointer(this.context);
+    const privates = getPrivatesByPointer(this.props.token);
     const Component = privates.compsLib[type] || type;
     return React.createElement(Component, props, ...children);
   }
   componentDidMount() {
-    const privates = getPrivatesByPointer(this.context);
+    const privates = getPrivatesByPointer(this.props.token);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
     }
@@ -98,11 +98,11 @@ class CarmiObserver extends React.Component {
     }
   }
   componentDidUpdate() {
-    const privates = getPrivatesByPointer(this.context);
+    const privates = getPrivatesByPointer(this.props.token);
     privates.pendingFlush.delete(this);
   }
   componentWillUnmount() {
-    const privates = getPrivatesByPointer(this.context);
+    const privates = getPrivatesByPointer(this.props.token);
     privates.pendingFlush.delete(this);
     if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
       privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
@@ -113,66 +113,103 @@ class CarmiObserver extends React.Component {
 CarmiObserver.contextType = CarmiContext;
 
 function Provider({ children, value, compsLib = {} }) {
-  const privates = getPrivates(value);
+  const privates = getPrivatesByInstance(value);
   privates.compsLib = compsLib;
   return React.createElement(CarmiRoot, { children, value });
 }
-
 
 function getMaybeKey(props, name) {
   return props && props.hasOwnProperty(name) ? props[name] : null;
 }
 
-function createElement(descriptor) {
+function replaceElementProps(element, newProps) {
+  Object.assign(element.props, newProps);
+  Object.keys(element.props).forEach(prop => {
+    if (!newProps.hasOwnProperty(prop) && !BUILT_IN_PROPS.hasOwnProperty(prop)) {
+      delete element.props[prop];
+    }
+  });
+}
+
+function parseDescriptor(descriptor) {
   const type = descriptor[0];
-  const childProps = descriptor[1] || {};
-  const { key: rawKey, ...childExtraProps } = childProps;
-  const key = getMaybeKey(childProps, 'key');
-  const privates = getPrivates(this);
-  const prevElement = privates.descriptorToElementsMap.get(descriptor);
-  if (prevElement && prevElement.props.type === type && getMaybeKey(prevElement.props, 'origKey') === key) {
+  const props = descriptor[1] || {};
+  const children = descriptor.slice(2);
+  const childrenList = children && Array.isArray(children[0]) && children.length === 1 ? children[0] : children;
+  const { key: rawKey, ...extraProps } = props;
+  const key = getMaybeKey(props, 'key');
+  return {type, props, children, childrenList, rawKey, extraProps, key};
+}
+
+const wrapElement = (wrappers, element, children) => wrappers.reduce((wrappedElement, wrapper) => wrapper(wrappedElement, children), element)
+
+function createElement(wrappers, descriptor) {
+  const {type, props, childrenList, extraProps, key} = parseDescriptor(descriptor);
+  const privates = getPrivatesByInstance(this);
+  const currentElement = privates.descriptorToElementsMap.get(descriptor);
+  if (currentElement && currentElement.props.type === type && getMaybeKey(currentElement.props, 'origKey') === key) {
+    // Element is mounted
     if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
       privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
     } else {
-      prevElement.props.dirtyFlag[0] = true;
+      currentElement.props.dirtyFlag[0] = true;
     }
-    Object.assign(prevElement.props, childExtraProps);
-    Object.keys(prevElement.props).forEach(prop => {
-      if (!childExtraProps.hasOwnProperty(prop) && !BUILT_IN_PROPS.hasOwnProperty(prop)) {
-        delete prevElement.props[prop];
-      }
-    });
+    replaceElementProps(currentElement, extraProps);
   } else {
     const dirtyFlag = [true];
-    const props = { descriptor, type, dirtyFlag };
+    const observerProps = {descriptor, type, dirtyFlag, token: pointerByInstance.get(this)};
     if (key !== null) {
-      props.origKey = key;
-      props.key = key;
+      observerProps.origKey = key;
+      observerProps.key = key;
     }
-    const rawElement = React.createElement(React.forwardRef((forwardProps, forwardedRef) => {
-      let overrides = null;
-      Object.keys(forwardProps).forEach(prop => {
-        if (!BUILT_IN_PROPS.hasOwnProperty(prop) && forwardProps[prop] !== childProps[prop]) {
-          overrides = overrides || {};
-          overrides[prop] = forwardProps[prop];
-        }
-      })
-      return React.createElement( CarmiObserver, {...props,overrides, forwardedRef})
-    }), { ...props, ...childExtraProps });
-    // sorry about doing it but 
-    // we short circuit the reconcilation code of React
-    // and we need to mutate the props in place
-    // so a parent component that is aware of the expected props
-    // of a child can access them, even if they changed since the
-    // last time React.createElement was triggered
-    const element = { ...rawElement }
-    element.props = { ...rawElement.props };
-    privates.descriptorToElementsMap.set(descriptor, element);
+    const newElement = createNewElement(observerProps, props);
+    privates.descriptorToElementsMap.set(descriptor, newElement);
   }
-  return privates.descriptorToElementsMap.get(descriptor);
+  const element = privates.descriptorToElementsMap.get(descriptor);
+  return wrapElement(wrappers, element, childrenList);
+}
+
+function getOverrides(originalProps, props) {
+  let overrides = null;
+  Object.keys(props).forEach(prop => {
+    if (!BUILT_IN_PROPS.hasOwnProperty(prop) && originalProps[prop] !== props[prop]) {
+      overrides = overrides || {};
+      overrides[prop] = props[prop];
+    }
+  })
+  return overrides;
+}
+
+function createNewElement(observerProps, props) {
+  const {key: rawKey, ...extraProps} = props;
+  const type = React.forwardRef((forwardProps, forwardedRef) => {
+    let overrides = getOverrides(props, forwardProps);
+    return React.createElement(CarmiObserver, {...observerProps, overrides, forwardedRef});
+  })
+  const compProps = {...observerProps, ...extraProps};
+  const rawElement = React.createElement(type, compProps);
+  // sorry about doing it but
+  // we short circuit the reconciliation code of React
+  // and we need to mutate the props in place
+  // so a parent component that is aware of the expected props
+  // of a child can access them, even if they changed since the
+  // last time React.createElement was triggered
+  const element = {...rawElement};
+  element.props = {...rawElement.props};
+
+  return element;
+}
+
+function getFunctionsLibrary(customWrappers = []) {
+    return {
+        createElement: function(descriptor) {
+            return createElement.call(this, customWrappers, descriptor);
+        }
+    };
 }
 
 module.exports = {
-  carmiReactFnLib: { createElement },
+  carmiReactFnLib: getFunctionsLibrary(),
+  getFunctionsLibrary,
   Provider
 };
