@@ -26,11 +26,20 @@ function getPrivatesByPointer(pointer) {
   return privatesByPointer.get(pointer);
 }
 
-function getPrivatesByInstance(instance) {
+function createPointerToInstanceIfNeeded(instance) {
   if (!pointerByInstance.has(instance)) {
     pointerByInstance.set(instance, {});
   }
+}
+
+function getPrivatesByInstance(instance) {
+  createPointerToInstanceIfNeeded(instance);
   return getPrivatesByPointer(pointerByInstance.get(instance));
+}
+
+function getPointerToInstance(instance) {
+  createPointerToInstanceIfNeeded(instance);
+  return pointerByInstance.get(instance)
 }
 
 class CarmiRoot extends React.Component {
@@ -143,32 +152,6 @@ function parseDescriptor(descriptor) {
 
 const wrapElement = (wrappers, element, children) => wrappers.reduce((wrappedElement, wrapper) => wrapper(wrappedElement, children), element)
 
-function createElement(wrappers, descriptor) {
-  const {type, props, childrenList, extraProps, key} = parseDescriptor(descriptor);
-  const privates = getPrivatesByInstance(this);
-  const currentElement = privates.descriptorToElementsMap.get(descriptor);
-  if (currentElement && currentElement.props.type === type && getMaybeKey(currentElement.props, 'origKey') === key) {
-    // Element is mounted
-    if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
-      privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
-    } else {
-      currentElement.props.dirtyFlag[0] = true;
-    }
-    replaceElementProps(currentElement, extraProps);
-  } else {
-    const dirtyFlag = [true];
-    const observerProps = {descriptor, type, dirtyFlag, token: pointerByInstance.get(this)};
-    if (key !== null) {
-      observerProps.origKey = key;
-      observerProps.key = key;
-    }
-    const newElement = createNewElement(observerProps, props);
-    privates.descriptorToElementsMap.set(descriptor, newElement);
-  }
-  const element = privates.descriptorToElementsMap.get(descriptor);
-  return wrapElement(wrappers, element, childrenList);
-}
-
 function getOverrides(originalProps, props) {
   let overrides = null;
   Object.keys(props).forEach(prop => {
@@ -198,6 +181,32 @@ function createNewElement(observerProps, props) {
   element.props = {...rawElement.props};
 
   return element;
+}
+
+function createElement(wrappers, descriptor) {
+  const {type, props, childrenList, extraProps, key} = parseDescriptor(descriptor);
+  const privates = getPrivatesByInstance(this);
+  const currentElement = privates.descriptorToElementsMap.get(descriptor);
+  if (currentElement && currentElement.props.type === type && getMaybeKey(currentElement.props, 'origKey') === key) {
+    // Element is mounted
+    if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
+      privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
+    } else {
+      currentElement.props.dirtyFlag[0] = true;
+    }
+    replaceElementProps(currentElement, extraProps);
+  } else {
+    const dirtyFlag = [true];
+    const observerProps = {descriptor, type, dirtyFlag, token: getPointerToInstance(this)};
+    if (key !== null) {
+      observerProps.origKey = key;
+      observerProps.key = key;
+    }
+    const newElement = createNewElement(observerProps, props);
+    privates.descriptorToElementsMap.set(descriptor, newElement);
+  }
+  const element = privates.descriptorToElementsMap.get(descriptor);
+  return wrapElement(wrappers, element, childrenList);
 }
 
 function getFunctionsLibrary(customWrappers = []) {
