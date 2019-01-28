@@ -202,6 +202,29 @@ exports[`rendering compiler optimizing multiple children support 2`] = `
 </div>
 `;
 
+exports[`rendering compiler optimizing plugins 1`] = `
+<span
+  data="auto-generated"
+>
+  <div>
+    <span
+      data="auto-generated"
+    >
+      <span>
+        first
+      </span>
+    </span>
+    <span
+      data="auto-generated"
+    >
+      <span>
+        second
+      </span>
+    </span>
+  </div>
+</span>
+`;
+
 exports[`rendering compiler optimizing refs forwarding should work 1`] = `
 <input
   value="test"
@@ -408,6 +431,29 @@ exports[`rendering compiler simple multiple children support 2`] = `
     2
   </span>
 </div>
+`;
+
+exports[`rendering compiler simple plugins 1`] = `
+<span
+  data="auto-generated"
+>
+  <div>
+    <span
+      data="auto-generated"
+    >
+      <span>
+        first
+      </span>
+    </span>
+    <span
+      data="auto-generated"
+    >
+      <span>
+        second
+      </span>
+    </span>
+  </div>
+</span>
 `;
 
 exports[`rendering compiler simple refs forwarding should work 1`] = `

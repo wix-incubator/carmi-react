@@ -1,9 +1,8 @@
 const { compile, and, or, root, arg0, arg1, setter, splice, ternary, chain, bind } = require('carmi');
-const { Provider, carmiReactFnLib } = require('../index');
+const { Provider, getFunctionsLibrary, carmiReactFnLib } = require('../index');
 const { createElement } = require('carmi/jsx');
 const renderer = require('react-test-renderer');
 const React = require('react');
-
 let renderCounter = 0;
 
 // inside this function React.createElement is used
@@ -259,5 +258,19 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     inst.setBackground('blue');
     expect(mounted.toJSON()).toMatchSnapshot();
     expectRenders(1, compiler);
+  });
+  it('plugins', async () => {
+    const todos = root.get('items').map((item, idx) => <span key={idx}>{item}</span>);
+    const todosList = <div key="root">{todos}</div>;
+    const model = {
+      todosList,
+      setItem: setter(arg0)
+    };
+    const wrapElement = element => React.createElement('span', {key: element.key, data: 'auto-generated'}, [element])
+    const optCode = eval(await compile(model, {compiler}));
+    const initialState = {items: ['first', 'second']};
+    const inst = optCode(initialState, getFunctionsLibrary([wrapElement]));
+    const mounted = renderer.create(React.createElement(Provider, { compsLib, value: inst, children: () => inst.todosList }));
+    expect(mounted.toJSON()).toMatchSnapshot();
   });
 });
