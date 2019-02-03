@@ -2,21 +2,27 @@
   "name": "carmi-react",
   "version": "1.0.0",
   "description": "Integration between Carmi and React",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "author": "Avi Marcus",
   "license": "MIT",
   "scripts": {
     "test": "node node_modules/jest/bin/jest.js",
-    "release": "wnpm-release --no-shrinkwrap"
+    "release": "wnpm-release --no-shrinkwrap",
+    "build": "babel index.js --out-dir dist --source-maps"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "private": false,
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-jest": "^23.4.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-3": "^6.24.1",
     "carmi": "^0.2.3",
     "jest": "^23.6.0",
     "react": "^16.6.1",

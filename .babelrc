@@ -1,5 +1,16 @@
 {
-  "presets": ["env", "react"],
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "ie": "11"
+        }
+      }
+    ],
+    "react",
+    "stage-3"
+  ],
   "plugins": [
     [
       "transform-react-jsx",
