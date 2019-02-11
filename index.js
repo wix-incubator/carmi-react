@@ -14,7 +14,9 @@ function getPrivatesByPointer(pointer) {
       compsLib: {},
       root: null,
       flush: () => {
-        privates.root.setState({});
+        if (privates.root.lastChildren !== privates.root.props.children()) {
+          privates.root.setState({});
+        }
         privates.pendingFlush.forEach(comp => {
           comp.setState({});
         });
