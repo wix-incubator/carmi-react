@@ -20,7 +20,6 @@ function getPrivatesByPointer(pointer) {
         privates.pendingFlush.forEach(comp => {
           comp.setState({});
         });
-        privates.pendingFlush.clear();
       }
     };
     privatesByPointer.set(pointer, privates);
@@ -106,11 +105,17 @@ class CarmiObserver extends React.Component {
     privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
     if (this.props.dirtyFlag[0]) {
       this.setState({});
+    } else {
+      privates.pendingFlush.delete(this);
     }
   }
   componentDidUpdate() {
     const privates = getPrivatesByPointer(this.props.token);
-    privates.pendingFlush.delete(this);
+    if (this.props.dirtyFlag[0]) {
+      this.setState({});
+    } else {
+      privates.pendingFlush.delete(this);
+    }
   }
   componentWillUnmount() {
     const privates = getPrivatesByPointer(this.props.token);
@@ -191,10 +196,9 @@ function createElement(wrappers, descriptor) {
   const currentElement = privates.descriptorToElementsMap.get(descriptor);
   if (currentElement && currentElement.props.type === type && getMaybeKey(currentElement.props, 'origKey') === key) {
     // Element is mounted
-    if (privates.root && privates.descriptorToCompsMap.has(descriptor)) {
+    currentElement.props.dirtyFlag[0] = true;
+    if (privates.descriptorToCompsMap.get(descriptor)) {
       privates.descriptorToCompsMap.get(descriptor).forEach(comp => privates.pendingFlush.add(comp));
-    } else {
-      currentElement.props.dirtyFlag[0] = true;
     }
     replaceElementProps(currentElement, extraProps);
   } else {
