@@ -20,6 +20,7 @@ function getPrivatesByPointer(pointer) {
         privates.pendingFlush.forEach(comp => {
           comp.setState({});
         });
+        privates.pendingFlush.clear();
       }
     };
     privatesByPointer.set(pointer, privates);
@@ -45,6 +46,7 @@ function getPointerToInstance(instance) {
 
 class CarmiRoot extends React.Component {
   constructor(props) {
+    console.log('root')
     super(props);
     this.lastChildren = null;
   }
@@ -105,16 +107,11 @@ class CarmiObserver extends React.Component {
     privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
     if (this.props.dirtyFlag[0]) {
       this.setState({});
-    } else {
-      privates.pendingFlush.delete(this);
     }
   }
   componentDidUpdate() {
-    const privates = getPrivatesByPointer(this.props.token);
     if (this.props.dirtyFlag[0]) {
       this.setState({});
-    } else {
-      privates.pendingFlush.delete(this);
     }
   }
   componentWillUnmount() {
