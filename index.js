@@ -46,7 +46,6 @@ function getPointerToInstance(instance) {
 
 class CarmiRoot extends React.Component {
   constructor(props) {
-    console.log('root')
     super(props);
     this.lastChildren = null;
   }
