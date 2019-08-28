@@ -108,6 +108,9 @@ class CarmiObserver extends React.Component {
       this.setState({});
     }
   }
+  shouldComponentUpdate(nextProps) {
+    return nextProps.dirtyFlag !== this.props.dirtyFlag || nextProps.dirtyFlag[0] || nextProps.overrides !== this.props.overrides
+  }
   componentDidUpdate() {
     if (this.props.dirtyFlag[0]) {
       this.setState({});
