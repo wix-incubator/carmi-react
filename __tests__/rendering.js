@@ -1,5 +1,5 @@
-const { compile, and, or, root, arg0, arg1, setter, splice, ternary, chain, bind } = require('carmi');
-const { Provider, getFunctionsLibrary, carmiReactFnLib } = require('../index');
+const { compile, root, arg0, setter, splice, ternary, bind } = require('carmi');
+const { Provider, getFunctionsLibrary, carmiReactFnLib } = require('../src/index');
 const { createElement } = require('carmi/jsx');
 const renderer = require('react-test-renderer');
 const React = require('react');
@@ -24,6 +24,13 @@ function getCompsLib({ createElement }) {
       }
       isMyComp() {
         return `yes:${this.props.value}`
+      }
+    },
+    RenderCounterComponent: class ShouldComponentUpdateComponent extends React.Component {
+      render() {
+        this.renderCounter = this.renderCounter ? this.renderCounter + 1 : 1
+        renderCounter++;
+        return <span>{this.renderCounter}</span>
       }
     },
     TodoItem: class TodoItem extends React.Component {
@@ -77,6 +84,39 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', compiler => {
     inst.setItem(3, 'Added a fourth item');
     expect(mounted.toJSON()).toMatchSnapshot();
   });
+  it('basic rendering should not unmount component on creating new descriptor instance', async () => {
+    const comps = root.mapValues((itemLabel, id) => createElement('RenderCounterComponent', {key: id, label: itemLabel}));
+    const allComps = <div>{comps.values()}</div>;
+
+    const model = {
+      allComps,
+      setComponentLabel: setter(arg0)
+    }
+    const buildOutput = eval(await compile(model, { compiler }));
+
+    const initialState = {
+      test: 'Test Component'
+    }
+    const instance = buildOutput(initialState, carmiReactFnLib);
+    const mounted = renderer.create(
+      React.createElement(Provider, {
+        children: () => instance.allComps,
+        value: instance,
+        compsLib
+      })
+    );
+
+    const comp = mounted.root.findByType('span');
+    expect(comp.children).toEqual(['1']);
+
+    instance.$runInBatch(() => {
+      instance.setComponentLabel('test')
+      instance.setComponentLabel('test', 'Changed')
+    })
+
+    expect(comp.children).toEqual(['2']);
+    instance.setComponentLabel('test', 'Changed 2')
+  })
   it('basic rendering using functions in compNames map', async () => {
     const todos = root.map((item, idx) => <span key={idx}>{item}</span>);
     const todosList = <div>{todos}</div>;
