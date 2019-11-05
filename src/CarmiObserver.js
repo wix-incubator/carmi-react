@@ -27,6 +27,14 @@ function replaceElementProps(element, newProps) {
     });
 }
 
+const registerInstance = comp => {
+    const privates = getPrivatesByPointer(comp.props.token);
+    if (!privates.descriptorToCompsMap.has(comp.props.descriptor)) {
+        privates.descriptorToCompsMap.set(comp.props.descriptor, new Set());
+    }
+    privates.descriptorToCompsMap.get(comp.props.descriptor).add(comp);
+}
+
 class CarmiObserver extends React.Component {
     render() {
         this.props.dirtyFlag[0] = false;
@@ -44,11 +52,7 @@ class CarmiObserver extends React.Component {
         return React.createElement(Component, props, ...children);
     }
     componentDidMount() {
-        const privates = getPrivatesByPointer(this.props.token);
-        if (!privates.descriptorToCompsMap.has(this.props.descriptor)) {
-            privates.descriptorToCompsMap.set(this.props.descriptor, new Set());
-        }
-        privates.descriptorToCompsMap.get(this.props.descriptor).add(this);
+        registerInstance(this);
         if (this.props.dirtyFlag[0]) {
             this.setState({});
         }
@@ -60,7 +64,12 @@ class CarmiObserver extends React.Component {
             nextProps.overrides !== this.props.overrides
         );
     }
-    componentDidUpdate() {
+    componentDidUpdate({descriptor}) {
+        if (descriptor !== this.props.descriptor) {
+            debugger
+            registerInstance(this)
+        }
+
         if (this.props.dirtyFlag[0]) {
             this.setState({});
         }

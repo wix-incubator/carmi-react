@@ -3,9 +3,7 @@
     [
       "env",
       {
-        "targets": {
-          "ie": "11"
-        }
+        "targets": "node"
       }
     ],
     "react"
