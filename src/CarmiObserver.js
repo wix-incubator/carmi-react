@@ -66,7 +66,6 @@ class CarmiObserver extends React.Component {
     }
     componentDidUpdate({descriptor}) {
         if (descriptor !== this.props.descriptor) {
-            debugger
             registerInstance(this)
         }
 
