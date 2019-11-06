@@ -6,7 +6,7 @@ export default {
     file: 'dist/index.js',
     format: 'cjs',
   },
-  external: [ 'react', 'prop-types'],
+  external: ['react', 'prop-types'],
   plugins: [
     babel({
       babelrc: false,
