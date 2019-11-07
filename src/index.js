@@ -5,27 +5,27 @@ import { CarmiRoot } from './CarmiRoot';
 import { getPrivatesByInstance } from './privates';
 
 export function Provider({ children, value, compsLib }) {
-  const privates = getPrivatesByInstance(value);
-  privates.compsLib = compsLib;
-  return React.createElement(CarmiRoot, { value }, children);
+    const privates = getPrivatesByInstance(value);
+    privates.compsLib = compsLib;
+    return React.createElement(CarmiRoot, { value }, children);
 }
 
 Provider.defaultProps = {
-  compsLib: {},
+    compsLib: {},
 };
 
 Provider.propTypes = {
-  children: PropTypes.func.isRequired,
-  value: PropTypes.object.isRequired,
-  compsLib: PropTypes.object,
+    children: PropTypes.func.isRequired,
+    value: PropTypes.object.isRequired,
+    compsLib: PropTypes.object,
 };
 
 export function getFunctionsLibrary(customWrappers = []) {
-  return {
-    createElement(descriptor) {
-      return createElement(this, descriptor, customWrappers);
-    },
-  };
+    return {
+        createElement(descriptor) {
+            return createElement(this, descriptor, customWrappers);
+        },
+    };
 }
 
 export const carmiReactFnLib = getFunctionsLibrary();
