@@ -9,37 +9,41 @@ export const BUILT_IN_PROPS = {
     type: true,
     dirtyFlag: true,
     token: true,
-    $internal: true
+    $internal: true,
 };
 
 function getOverrides(originalProps, props) {
     let overrides = null;
-    Object.keys(props).forEach(prop => {
-        if (!BUILT_IN_PROPS.hasOwnProperty(prop) && originalProps[prop] !== props[prop]) {
+    Object.keys(props)
+        .filter(prop => !BUILT_IN_PROPS.hasOwnProperty(prop) && originalProps[prop] !== props[prop])
+        .forEach(prop => {
             overrides = overrides || {};
             overrides[prop] = props[prop];
-        }
-    });
+        });
     return overrides;
 }
 
 export const createForwardRef = CarmiObserver => {
     const Component = (props, forwardedRef) => {
         const {
-            $internal: {observerProps, originalProps},
+            $internal: { observerProps, originalProps },
             ...forwardProps
         } = props;
-        let overrides = getOverrides(originalProps, forwardProps);
-        return React.createElement(CarmiObserver, {...observerProps, overrides, forwardedRef});
+        const overrides = getOverrides(originalProps, forwardProps);
+        return React.createElement(CarmiObserver, {
+            ...observerProps,
+            overrides,
+            forwardedRef,
+        });
     };
 
     const forwardRef = React.forwardRef(Component);
     forwardRef.displayName = 'CarmiForwardRef';
-    forwardRef.propTypes = {
+    Component.propTypes = {
         $internal: PropTypes.shape({
             observerProps: PropTypes.object,
-            originalProps: PropTypes.object
-        }).isRequired
+            originalProps: PropTypes.object,
+        }).isRequired,
     };
 
     return forwardRef;

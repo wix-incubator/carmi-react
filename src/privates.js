@@ -17,7 +17,7 @@ export function getPrivatesByPointer(pointer) {
                     comp.setState({});
                 });
                 privates.pendingFlush.clear();
-            }
+            },
         };
         privatesByPointer.set(pointer, privates);
     }
