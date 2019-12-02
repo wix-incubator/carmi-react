@@ -88,7 +88,6 @@ describe.each(['simple', 'optimizing'])('rendering compiler %s', (compiler) => {
 
     const model = {
       allComps,
-      junk: comps.mapValues(() => true), // This is here in order to pass the test when running in optimizing mode
       setComponentLabel: setter('data', arg0, 'label'),
       setStructure: setter('structure', arg0),
     };
